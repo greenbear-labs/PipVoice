@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body style="margin:0">
+<title>Pip the Talking Buddy</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@500;700&display=swap">
+<style>
+/* Layout: one-screen toy. Big face in the middle, topic picture-buttons below, grown-up drawer at the bottom. Single bright theme by choice. */
+:root {
+  --sky: #E6DEFF;
+  --sky-deep: #C9B8FF;
+  --pip: #FF5FA2;
+  --pip-dark: #D63C82;
+  --ink: #2B2245;
+  --ink-soft: #5A4F7A;
+  --card: #FFFFFF;
+  --listen: #22B07D;
+  --talk: #7A5CFF;
+  --display: "Baloo 2", "Comic Sans MS", "Chalkboard SE", system-ui, sans-serif;
+  --body: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+html, body { height: 100%; }
+body {
+  background: radial-gradient(120% 80% at 50% 10%, #F6F2FF 0%, var(--sky) 55%, var(--sky-deep) 100%);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 16px;
+  overflow-x: hidden;
+}
+.app {
+  min-height: 100%;
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  padding-block: 12px 20px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  box-sizing: border-box;
+}
+header { width: 100%; max-width: 760px; display: flex; justify-content: space-between; align-items: center; }
+header h1 { font-family: var(--display); font-weight: 800; font-size: 1.6rem; margin: 0; color: var(--pip-dark); letter-spacing: .01em; }
+.pill {
+  font-family: var(--display); font-weight: 700; font-size: 1.05rem;
+  padding: 6px 16px; border-radius: 999px; background: var(--card); color: var(--ink-soft);
+  box-shadow: 0 2px 0 rgba(43,34,69,.12); display: inline-flex; align-items: center; gap: 8px;
+}
+.pill .dot { width: 12px; height: 12px; border-radius: 50%; background: #C4BCD8; }
+.pill[data-state="listening"] .dot { background: var(--listen); animation: pulse 1.2s ease-in-out infinite; }
+.pill[data-state="talking"] .dot { background: var(--talk); }
+@keyframes pulse { 50% { transform: scale(1.5); opacity: .6; } }
+
+.stage { position: relative; width: min(78vw, 360px); aspect-ratio: 1; max-width: 100%; }
+#face { width: 100%; height: 100%; display: block; cursor: pointer; overflow: visible; }
+#face:focus-visible { outline: 4px solid var(--talk); outline-offset: 6px; border-radius: 50%; }
+.bubble {
+  position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%);
+  width: max-content; max-width: min(92vw, 520px);
+  background: var(--card); border-radius: 22px; padding: 10px 18px;
+  font-family: var(--display); font-weight: 700; font-size: 1.25rem; line-height: 1.25; text-align: center;
+  box-shadow: 0 4px 0 rgba(43,34,69,.12);
+}
+.bubble[hidden] { display: none !important; }
+.pop { position: absolute; top: 2%; right: 0; font-size: 3.6rem; pointer-events: none; opacity: 0; }
+.pop.go { animation: popup 1.6s ease-out; }
+@keyframes popup { 0% { opacity: 0; transform: scale(.3) rotate(-20deg); } 20% { opacity: 1; transform: scale(1.2) rotate(8deg); } 80% { opacity: 1; transform: scale(1) translateY(-14px); } 100% { opacity: 0; transform: translateY(-30px); } }
+
+#startBtn {
+  font-family: var(--display); font-weight: 800; font-size: 1.6rem;
+  background: var(--pip); color: #fff; border: none; border-radius: 999px;
+  padding: 14px 40px; box-shadow: 0 6px 0 var(--pip-dark); cursor: pointer;
+}
+#startBtn:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--pip-dark); }
+#startBtn:focus-visible { outline: 4px solid var(--talk); outline-offset: 4px; }
+
+.topics { width: 100%; max-width: 760px; display: flex; flex-direction: column; gap: 8px; }
+.topics h2 { font-family: var(--display); font-size: 1.05rem; color: var(--ink-soft); margin: 0; text-align: center; font-weight: 700; }
+.chips { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 10px; }
+.chip {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: var(--card); border: none; border-radius: 20px; padding: 10px 4px 8px;
+  font-family: var(--display); font-weight: 700; font-size: 1rem; color: var(--ink);
+  box-shadow: 0 4px 0 rgba(43,34,69,.12); cursor: pointer;
+}
+.chip span { font-size: 2.1rem; line-height: 1; }
+.chip:active, .chip.lit { transform: translateY(3px) scale(1.04); box-shadow: 0 1px 0 rgba(43,34,69,.12); background: #FFE8F2; }
+.chip:focus-visible { outline: 3px solid var(--talk); outline-offset: 2px; }
+
+details.grownups { width: 100%; max-width: 760px; background: rgba(255,255,255,.7); border-radius: 16px; padding: 10px 14px; box-sizing: border-box; }
+details.grownups summary { cursor: pointer; font-weight: 700; color: var(--ink-soft); }
+.grid2 { display: grid; gap: 12px; margin-top: 10px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.row input[type=text] { flex: 1 1 200px; min-width: 0; font: inherit; padding: 8px 12px; border-radius: 10px; border: 1px solid #C4BCD8; }
+.row button, .row select { font: inherit; padding: 8px 14px; border-radius: 10px; border: 1px solid #C4BCD8; background: #fff; cursor: pointer; max-width: 100%; }
+.note { font-size: .9rem; color: var(--ink-soft); margin: 0; max-width: 65ch; }
+.warn { background: #FFF4D6; border-radius: 12px; padding: 10px 14px; font-size: .95rem; max-width: 65ch; }
+#log { font-size: .9rem; max-height: 180px; overflow-y: auto; margin: 0; padding-left: 18px; color: var(--ink-soft); }
+#log b { color: var(--ink); }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="app">
+  <header>
+    <h1>Pip</h1>
+    <div class="pill" id="statePill" data-state="idle"><span class="dot"></span><span id="stateText">Sleeping</span></div>
+  </header>
+
+  <div class="stage">
+    <svg id="face" viewBox="0 0 400 400" role="img" aria-label="Pip's face. Tap to say hi." tabindex="0">
+      <defs>
+        <radialGradient id="skin" cx="42%" cy="38%" r="70%">
+          <stop offset="0%" stop-color="#FFE3EC"/><stop offset="70%" stop-color="#FFC4D8"/><stop offset="100%" stop-color="#F7A8C4"/>
+        </radialGradient>
+      </defs>
+      <g id="whole">
+        <circle id="glow" cx="200" cy="220" r="178" fill="none" stroke="#22B07D" stroke-width="10" opacity="0"/>
+        <!-- pigtail puffs with little bows -->
+        <g id="puffL"><circle cx="58" cy="140" r="50" fill="#7B4BB0"/><circle cx="44" cy="124" r="12" fill="#9A6BD0" opacity=".6"/></g>
+        <g id="puffR"><circle cx="342" cy="140" r="50" fill="#7B4BB0"/><circle cx="328" cy="124" r="12" fill="#9A6BD0" opacity=".6"/></g>
+        <g fill="#FFD23F">
+          <path d="M 92 160 L 72 146 L 74 176 Z"/><path d="M 92 160 L 112 146 L 110 176 Z"/><circle cx="92" cy="161" r="7"/>
+          <path d="M 308 160 L 288 146 L 290 176 Z"/><path d="M 308 160 L 328 146 L 326 176 Z"/><circle cx="308" cy="161" r="7"/>
+        </g>
+        <!-- hair behind the head, then the head -->
+        <circle cx="200" cy="200" r="156" fill="#7B4BB0"/>
+        <circle cx="200" cy="228" r="146" fill="url(#skin)"/>
+        <!-- bangs -->
+        <path d="M 66 182 Q 100 110 156 146 Q 200 96 244 146 Q 300 110 334 182 Q 320 60 200 54 Q 80 60 66 182 Z" fill="#7B4BB0"/>
+        <path d="M 120 92 Q 150 76 180 78" stroke="#9A6BD0" stroke-width="8" fill="none" stroke-linecap="round" opacity=".7"/>
+        <!-- big bow on top; its middle shows Pip's state -->
+        <g id="bow" transform="translate(200 56)">
+          <path d="M 0 0 L -52 -30 Q -62 0 -52 30 Z" fill="#FF5FA2"/>
+          <path d="M 0 0 L 52 -30 Q 62 0 52 30 Z" fill="#FF5FA2"/>
+          <path d="M -8 0 L -40 -16 L -40 16 Z" fill="#D63C82" opacity=".5"/>
+          <path d="M 8 0 L 40 -16 L 40 16 Z" fill="#D63C82" opacity=".5"/>
+          <circle id="bowDot" r="14" fill="#FFD23F" stroke="#D63C82" stroke-width="4"/>
+        </g>
+        <ellipse cx="112" cy="272" rx="28" ry="17" fill="#FF7FA8" opacity=".5"/>
+        <ellipse cx="288" cy="272" rx="28" ry="17" fill="#FF7FA8" opacity=".5"/>
+        <g id="eyes">
+          <g id="eyeL" transform="translate(146 212)">
+            <path d="M -30 -32 L -44 -48 M -18 -40 L -26 -58 M -4 -43 L -6 -62" stroke="#2B2245" stroke-width="6" stroke-linecap="round"/>
+            <ellipse rx="32" ry="38" fill="#fff"/><ellipse rx="24" ry="28" cy="4" fill="#3A2466"/><circle cx="-8" cy="-6" r="9" fill="#fff"/><circle cx="9" cy="14" r="4" fill="#fff"/>
+          </g>
+          <g id="eyeR" transform="translate(254 212)">
+            <path d="M 30 -32 L 44 -48 M 18 -40 L 26 -58 M 4 -43 L 6 -62" stroke="#2B2245" stroke-width="6" stroke-linecap="round"/>
+            <ellipse rx="32" ry="38" fill="#fff"/><ellipse rx="24" ry="28" cy="4" fill="#3A2466"/><circle cx="-8" cy="-6" r="9" fill="#fff"/><circle cx="9" cy="14" r="4" fill="#fff"/>
+          </g>
+        </g>
+        <path id="mouth" d="" fill="#9C2B4E" stroke="#7A1F3B" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+        <path id="tongue" d="" fill="#FF8FAB"/>
+      </g>
+    </svg>
+    <div class="pop" id="pop" aria-hidden="true"></div>
+    <div class="bubble" id="bubble" hidden aria-live="polite"></div>
+  </div>
+
+  <button id="startBtn" type="button">Wake up Pip!</button>
+
+  <section class="topics" aria-label="Things to talk about">
+    <h2>Talk to Pip about…</h2>
+    <div class="chips" id="chips"></div>
+  </section>
+
+  <details class="grownups" id="grownups">
+    <summary>For grown-ups</summary>
+    <div class="grid2">
+      <p class="warn" id="micNote" hidden></p>
+      <div class="row">
+        <label for="typed">Pretend they said:</label>
+        <input id="typed" type="text" placeholder="e.g. I like red race cars" autocomplete="off">
+        <button id="sayBtn" type="button">Send</button>
+      </div>
+      <div class="row">
+        <label for="voiceSel">Backup voice</label>
+        <select id="voiceSel"></select>
+        <label><input type="checkbox" id="showHeard" checked> Show what Pip heard</label>
+      </div>
+      <p class="note" id="voiceNote"></p>
+      <p class="note">Pip listens for words like cars, race, robots and candy, plus a few combos like "race car" and "fire truck". When she hears talking but no known words, she answers with a friendly "tell me more" line. After a quiet spell she suggests a topic, and after three unanswered suggestions she goes to sleep so she doesn't talk to an empty room.</p>
+      <ol id="log"></ol>
+    </div>
+  </details>
+</div>
+
+<!-- Everything Pip can say. make_pip_voice.py reads this same block to record each line, so edit lines here only. -->
+<script type="application/json" id="pip-lines">
+{
+  "topics": [
+    { "id": "cars", "label": "Cars", "icon": "🚗", "words": ["car", "vroom", "drive", "driving", "wheel"],
+      "say": ["Vroom vroom! I love cars! What color is your car?", "Beep beep! Cars go so fast! Where should we drive?", "Cars have four wheels! Can you count to four with me? One, two, three, four!"] },
+    { "id": "race", "label": "Racing", "icon": "🏁", "words": ["race", "racing", "fast", "speed", "win", "zoom"],
+      "say": ["Ready, set, GO! Who's the fastest?", "Zoom zoom! You're super fast! Can you run in place?", "Let's race! On your mark, get set, go go go!"] },
+    { "id": "robots", "label": "Robots", "icon": "🤖", "words": ["robot", "beep", "boop", "machine"],
+      "say": ["Beep boop! Can you talk like a robot? I can! Beep boop!", "Robots can dance! Let's do the robot dance!", "If you had a robot, what would it do?"] },
+    { "id": "candy", "label": "Candy", "icon": "🍭", "words": ["candy", "lollipop", "chocolate", "sweet", "sugar", "gummy", "cookie"],
+      "say": ["Yum yum! Candy is sooo sweet! What's your favorite?", "Lollipops are swirly and colorful! Red or blue?", "Mmm, chocolate! But don't forget to brush your teeth!"] },
+    { "id": "dinosaurs", "label": "Dinos", "icon": "🦖", "words": ["dinosaur", "dino", "rawr", "roar", "t rex", "trex"],
+      "say": ["Rawr! Dinosaurs are so big and stompy! Can you stomp like a dino?", "T rex had tiny little arms! Show me your tiny dino arms!", "Some dinosaurs were as tall as a house! Wow!"] },
+    { "id": "trucks", "label": "Trucks", "icon": "🚚", "words": ["truck", "digger", "dump", "tractor", "bulldozer", "excavator"],
+      "say": ["Big trucks go rumble rumble! What does your truck carry?", "Diggers dig dig dig in the dirt! Can you dig with your hands?", "Honk honk! Here comes a big truck!"] },
+    { "id": "trains", "label": "Trains", "icon": "🚂", "words": ["train", "choo", "track", "railroad"],
+      "say": ["Choo choo! All aboard the Pip train!", "Trains go clickety clack on the tracks! Clickety clack!", "Where should our train go? To the zoo?"] },
+    { "id": "space", "label": "Rockets", "icon": "🚀", "words": ["rocket", "space", "moon", "star", "planet", "astronaut", "blast"],
+      "say": ["Three, two, one, blast off! We're going to the moon!", "Stars twinkle twinkle way up high! Can you find a star?", "Astronauts float in space! Can you float like an astronaut?"] },
+    { "id": "animals", "label": "Animals", "icon": "🐶", "words": ["dog", "puppy", "doggy", "cat", "kitty", "cow", "pig", "duck", "lion", "animal", "horse", "monkey"],
+      "say": ["I love animals! What sound does a doggy make?", "Moo! Oink! Quack! Which animal is that?", "A lion goes roar! Can you roar like a lion?"] },
+    { "id": "ball", "label": "Balls", "icon": "⚽", "words": ["ball", "kick", "throw", "catch", "soccer", "basketball"],
+      "say": ["Bounce bounce bounce! Do you like to kick or throw?", "Catch! Oh, I missed it! Silly Pip!", "Balls are round like my face! Can you make a ball with your arms?"] },
+    { "id": "music", "label": "Songs", "icon": "🎵", "words": ["sing", "song", "music", "dance", "twinkle", "abc"],
+      "say": ["Twinkle twinkle little star, how I wonder what you are!", "Let's dance! Wiggle wiggle wiggle! Now freeze!", "La la la! Your turn to sing!"] },
+    { "id": "icecream", "label": "Ice cream", "icon": "🍦", "words": ["ice cream", "icecream", "popsicle"],
+      "say": ["Ice cream! Brrr, it's cold! What flavor do you like?", "Strawberry, chocolate, or vanilla? I like all of them!"] }
+  ],
+  "combos": [
+    { "parts": ["race", "car"], "topic": "race", "icon": "🏎️", "say": ["A race car! The fastest car of all! Vroooom!", "Race cars go zoom around the track! Ready, set, go!"] },
+    { "parts": ["fire", "truck"], "topic": "trucks", "icon": "🚒", "say": ["Wee-ooo wee-ooo! Here comes the fire truck to save the day!", "Fire trucks are big and red with a long ladder!"] },
+    { "parts": ["robot", "dino"], "topic": "robots", "icon": "🦾", "say": ["A robot dinosaur! Beep boop rawr! That's so silly!"] },
+    { "parts": ["monster", "truck"], "topic": "trucks", "icon": "🛻", "say": ["Monster trucks have giant wheels! They go bump, bump, crash!"] },
+    { "parts": ["rocket", "moon"], "topic": "space", "icon": "🌙", "say": ["Let's fly our rocket to the moon! Three, two, one, blast off!"] }
+  ],
+  "social": [
+    { "words": ["hi", "hello", "hey", "hiya"], "say": ["Hi friend! I'm Pip! Want to talk about cars or robots?", "Hello hello! I'm so happy to see you!"] },
+    { "words": ["bye", "goodbye", "night"], "say": ["Bye bye! See you later, alligator!", "Goodnight! Sweet dreams!"] },
+    { "words": ["name"], "say": ["My name is Pip! What's your name?", "I'm Pip! P, I, P!"] },
+    { "words": ["love"], "say": ["I love you too! You're my best buddy!"] },
+    { "words": ["funny", "silly", "laugh", "joke"], "say": ["Ha ha ha! You're so silly! Why did the car go to sleep? It was wheely tired!"] },
+    { "words": ["yes", "yeah", "yay"], "say": ["Yay! Hooray!", "Yes yes yes!"] },
+    { "words": ["no", "nope"], "say": ["No? Okay! What do you want to talk about?", "Silly! Okay, no!"] }
+  ],
+  "generic": [
+    "Wow! Tell me more!", "Really? That's so cool!", "Ooh! And then what happened?",
+    "You're a great talker!", "Hmm! I think so too!", "Whoa! That sounds amazing!",
+    "Ha ha! You're funny!", "I like talking with you!", "Yeah! Keep going!"
+  ],
+  "idle": ["Do you want to talk about {topic}?", "Hey! Do you like {topic}?", "I'm thinking about {topic}! Are you?"],
+  "hello": ["Hi! I'm Pip! What do you want to talk about?", "Hello friend! Let's talk! Do you like cars?"],
+  "poke": ["Hee hee, that tickles!", "Boop! You booped me!", "Hi again!"],
+  "sleepy": ["I'm getting sleepy. Tap me to wake me up!"]
+}
+</script>
+<!-- Recorded clips, made by make_pip_voice.py. Without this file Pip uses the device's own voice. -->
+<script src="audio/manifest.js"></script>
+
+<script>
+(() => {
+  const L = JSON.parse(document.getElementById("pip-lines").textContent);
+  const TOPICS = L.topics, COMBOS = L.combos, SOCIAL = L.social, GENERIC = L.generic;
+  const idleLines = (t) => L.idle.map((s) => s.replace("{topic}", t.label.toLowerCase()));
+
+  // ---------- Recorded clips ----------
+  // A clip's file name is a hash of its exact text, so editing a line just means recording that one again.
+  const CLIPS = (window.PIP_AUDIO && window.PIP_AUDIO.clips) || {};
+  function clipKey(text) {
+    let h = 0x811c9dc5;
+    for (const b of new TextEncoder().encode(text)) { h ^= b; h = Math.imul(h, 0x01000193) >>> 0; }
+    return h.toString(16).padStart(8, "0");
+  }
+
+  // ---------- Elements ----------
+  const $ = (id) => document.getElementById(id);
+  const bubble = $("bubble"), pop = $("pop"), pill = $("statePill"), stateText = $("stateText");
+  const mouth = $("mouth"), tongue = $("tongue"), glow = $("glow"), bowDot = $("bowDot");
+  const eyes = [$("eyeL"), $("eyeR")];
+  const logEl = $("log"), micNote = $("micNote"), voiceSel = $("voiceSel"), showHeard = $("showHeard");
+  const nClips = Object.keys(CLIPS).length;
+  $("voiceNote").textContent = nClips
+    ? `Pip is using ${nClips} recorded clips (${window.PIP_AUDIO.voice}). The backup voice only covers lines without a clip.`
+    : "No recorded clips found, so Pip uses this device's own voice. Run make_pip_voice.py on the Mac mini to record her real voice.";
+
+  // ---------- Chips ----------
+  const chipEls = {};
+  TOPICS.forEach((t) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "chip";
+    b.innerHTML = `<span aria-hidden="true">${t.icon}</span>${t.label}`;
+    b.addEventListener("click", () => { ensureAwake(); respondTopic(t); });
+    $("chips").appendChild(b);
+    chipEls[t.id] = b;
+  });
+
+  // ---------- State ----------
+  let awake = false, speaking = false, listening = false, mouthOpen = 0, mood = "idle";
+  let recog = null, recogBlocked = false, lastHeardAt = Date.now(), idleStreak = 0;
+  const lastPick = new Map();
+  const pick = (key, arr) => { // random without repeating the previous one
+    if (arr.length === 1) return arr[0];
+    let i; do { i = Math.floor(Math.random() * arr.length); } while (i === lastPick.get(key));
+    lastPick.set(key, i); return arr[i];
+  };
+
+  function setState(s) {
+    mood = s;
+    pill.dataset.state = s;
+    stateText.textContent = { idle: "Sleeping", listening: "Listening", talking: "Talking" }[s] || s;
+    glow.setAttribute("opacity", s === "listening" ? ".55" : "0");
+  }
+
+  function log(kind, text) {
+    const li = document.createElement("li");
+    li.innerHTML = `<b>${kind}:</b> `;
+    li.appendChild(document.createTextNode(text));
+    logEl.prepend(li);
+    while (logEl.children.length > 40) logEl.lastChild.remove();
+  }
+
+  // ---------- Backup voice (device speech) ----------
+  let voice = null;
+  const FEMALE = /Ava|Zoe|Samantha|Aria|Jenny|Emma|Michelle|Karen|Moira|Tessa|Victoria|Allison|Susan|Female|Google US English/;
+  function loadVoices() {
+    const vs = speechSynthesis.getVoices().filter((v) => v.lang && v.lang.toLowerCase().startsWith("en"));
+    if (!vs.length) return;
+    voiceSel.innerHTML = "";
+    vs.forEach((v, i) => { const o = document.createElement("option"); o.value = i; o.textContent = `${v.name} (${v.lang})`; voiceSel.appendChild(o); });
+    // Prefer a natural-sounding female voice, then any female voice.
+    let idx = vs.findIndex((v) => /Natural|Neural|Premium|Enhanced/.test(v.name) && FEMALE.test(v.name));
+    if (idx < 0) idx = vs.findIndex((v) => FEMALE.test(v.name));
+    if (idx < 0) idx = 0;
+    voiceSel.value = idx; voice = vs[idx];
+    voiceSel.onchange = () => { voice = vs[+voiceSel.value]; speakDevice("Hi! This is my new voice!", () => {}); };
+  }
+  if ("speechSynthesis" in window) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
+
+  function speakDevice(text, done) {
+    if (!("speechSynthesis" in window)) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    if (voice) u.voice = voice;
+    // Neural voices sound odd when pitched far up, so only nudge them.
+    u.pitch = /Natural|Neural|Premium|Enhanced|Siri/.test(voice?.name || "") ? 1.15 : 1.35; u.rate = 0.95;
+    u.onend = done; u.onerror = done;
+    speechSynthesis.speak(u);
+  }
+
+  // ---------- Talking ----------
+  let player = null;
+  function say(text, icon) {
+    bubble.textContent = text; bubble.hidden = false;
+    if (icon) { pop.textContent = icon; pop.classList.remove("go"); void pop.offsetWidth; pop.classList.add("go"); }
+    log("Pip", text);
+    stopListening();
+    if (player) { player.onended = player.onerror = null; player.pause(); }
+    speaking = true; setState("talking");
+    let finished = false;
+    const done = () => {
+      if (finished) return;
+      finished = true; speaking = false; clearTimeout(safety);
+      setTimeout(() => { if (!speaking) bubble.hidden = true; }, 1800);
+      lastHeardAt = Date.now();
+      if (awake) { setState("listening"); startListening(); } else setState("idle");
+    };
+    // Some browsers drop the end event, so a timer guarantees Pip goes back to listening.
+    const safety = setTimeout(done, 3000 + text.length * 110);
+    const key = clipKey(text);
+    if (CLIPS[key]) {
+      player = new Audio(`audio/${key}.mp3`);
+      player.onended = done;
+      player.onerror = () => { player.onerror = null; speakDevice(text, done); };
+      player.play().catch(() => speakDevice(text, done));
+    } else {
+      speakDevice(text, done);
+    }
+  }
+
+  // ---------- Matching ----------
+  function norm(s) { return " " + s.toLowerCase().replace(/[^a-z\s']/g, " ").replace(/\s+/g, " ").trim() + " "; }
+  const has = (text, w) => text.includes(" " + w); // word-start match: "car" hits "cars", not "scar"
+
+  function matchAll(alternatives) {
+    // Look through every guess the recognizer offered; toddler speech often lands on the 2nd or 3rd.
+    for (const alt of alternatives) {
+      const t = norm(alt);
+      for (const c of COMBOS) if (c.parts.every((p) => has(t, p))) return { combo: c };
+    }
+    for (const alt of alternatives) {
+      const t = norm(alt);
+      for (const tp of TOPICS) if (tp.words.some((w) => has(t, w))) return { topic: tp };
+    }
+    for (const alt of alternatives) {
+      const t = norm(alt);
+      for (const s of SOCIAL) if (s.words.some((w) => t.includes(" " + w + " "))) return { social: s };
+    }
+    return null;
+  }
+
+  function flash(id) {
+    const el = chipEls[id]; if (!el) return;
+    el.classList.add("lit"); setTimeout(() => el.classList.remove("lit"), 900);
+  }
+  function respondTopic(t) { flash(t.id); say(pick(t.id, t.say), t.icon); }
+
+  function handleHeard(alternatives) {
+    const heard = alternatives[0] || "";
+    if (!heard.trim()) return;
+    idleStreak = 0; lastHeardAt = Date.now();
+    log("Heard", alternatives.join("  |  "));
+    if (showHeard.checked) { bubble.textContent = `"${heard}"`; bubble.hidden = false; }
+    const m = matchAll(alternatives);
+    setTimeout(() => {
+      if (m?.combo) { flash(m.combo.topic); say(pick(m.combo.parts.join("+"), m.combo.say), m.combo.icon); }
+      else if (m?.topic) respondTopic(m.topic);
+      else if (m?.social) say(pick(m.social.words[0], m.social.say));
+      else say(pick("generic", GENERIC));
+    }, showHeard.checked ? 500 : 150);
+  }
+
+  // ---------- Listening ----------
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  function showMicNote(msg) { micNote.textContent = msg; micNote.hidden = false; $("grownups").open = true; }
+
+  function startListening() {
+    if (!SR || recogBlocked || speaking || listening) return;
+    recog = new SR();
+    recog.lang = "en-US";
+    recog.continuous = true;
+    recog.interimResults = false;
+    recog.maxAlternatives = 4;
+    recog.onresult = (e) => {
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const r = e.results[i];
+        if (!r.isFinal) continue;
+        handleHeard(Array.from(r).map((a) => a.transcript).filter(Boolean));
+        return;
+      }
+    };
+    recog.onerror = (e) => {
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+        recogBlocked = true;
+        showMicNote("Pip can't use the microphone here. Allow the microphone for this page in the browser settings, or use Chrome, Edge or Safari. You can still tap the pictures or type below.");
+      }
+    };
+    recog.onend = () => {
+      listening = false;
+      // Chrome ends sessions on silence; quietly restart while awake.
+      if (awake && !speaking && !recogBlocked) setTimeout(startListening, 250);
+    };
+    try { recog.start(); listening = true; setState("listening"); } catch (_) { listening = false; }
+  }
+  function stopListening() {
+    if (recog) { recog.onend = null; try { recog.abort(); } catch (_) {} }
+    recog = null; listening = false;
+  }
+
+  // ---------- Idle nudges ----------
+  setInterval(() => {
+    if (!awake || speaking) return;
+    if (Date.now() - lastHeardAt < 20000) return;
+    if (idleStreak >= 3) { awake = false; stopListening(); say(L.sleepy[0]); $("startBtn").hidden = false; return; }
+    idleStreak++;
+    const t = TOPICS[Math.floor(Math.random() * TOPICS.length)];
+    flash(t.id);
+    say(pick("idle", idleLines(t)), t.icon);
+  }, 2000);
+
+  // ---------- Waking ----------
+  function ensureAwake() {
+    if (awake) return;
+    awake = true; idleStreak = 0; lastHeardAt = Date.now();
+    $("startBtn").hidden = true;
+    if (!SR) showMicNote("This browser can't do speech recognition (Firefox can't). Chrome, Edge or Safari work. You can still tap the pictures or type below.");
+    navigator.wakeLock?.request("screen").catch(() => {});
+  }
+  $("startBtn").addEventListener("click", () => { ensureAwake(); say(pick("hello", L.hello)); });
+  const poke = () => {
+    if (!awake) { $("startBtn").click(); return; }
+    say(pick("poke", L.poke));
+  };
+  $("face").addEventListener("click", poke);
+  $("face").addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); poke(); } });
+  const sendTyped = () => { const v = $("typed").value.trim(); if (!v) return; ensureAwake(); $("typed").value = ""; handleHeard([v]); };
+  $("sayBtn").addEventListener("click", sendTyped);
+  $("typed").addEventListener("keydown", (e) => { if (e.key === "Enter") sendTyped(); });
+
+  // ---------- Face animation ----------
+  let blinkUntil = 0, nextBlink = performance.now() + 2500;
+  function drawMouth(open) {
+    const w = 46, y = 296;
+    if (open < 0.05) {
+      mouth.setAttribute("d", `M ${200 - w} ${y} Q 200 ${y + (mood === "idle" ? 12 : 30)} ${200 + w} ${y}`);
+      mouth.setAttribute("fill", "none"); tongue.setAttribute("d", "");
+      return;
+    }
+    const h = 8 + open * 44;
+    mouth.setAttribute("fill", "#9C2B4E");
+    mouth.setAttribute("d", `M ${200 - w} ${y} Q 200 ${y - 6} ${200 + w} ${y} Q 200 ${y + h * 2} ${200 - w} ${y} Z`);
+    tongue.setAttribute("d", `M ${200 - w * 0.45} ${y + h * 0.75} Q 200 ${y + h * 0.35} ${200 + w * 0.45} ${y + h * 0.75} Q 200 ${y + h * 1.05} ${200 - w * 0.45} ${y + h * 0.75} Z`);
+  }
+  function frame(now) {
+    const target = speaking ? 0.25 + 0.75 * Math.abs(Math.sin(now / 75) * Math.sin(now / 190 + 1)) : 0;
+    mouthOpen += (target - mouthOpen) * 0.45;
+    drawMouth(mouthOpen);
+    if (now > nextBlink) { blinkUntil = now + 140; nextBlink = now + 2000 + Math.random() * 3500; }
+    const sy = now < blinkUntil ? 0.08 : mood === "idle" ? 0.3 : 1;
+    const look = mood === "listening" ? Math.sin(now / 900) * 6 : 0;
+    eyes.forEach((g, i) => g.setAttribute("transform", `translate(${(i ? 254 : 146) + look} 212) scale(1 ${sy})`));
+    const bob = speaking ? Math.sin(now / 120) * 5 : Math.sin(now / 700) * 3;
+    $("whole").setAttribute("transform", `translate(0 ${bob})`);
+    // Pigtails bounce while she talks; the bow tilts a little.
+    const swing = speaking ? Math.sin(now / 110) * 6 : Math.sin(now / 900) * 2;
+    $("puffL").setAttribute("transform", `rotate(${swing} 110 180)`);
+    $("puffR").setAttribute("transform", `rotate(${-swing} 290 180)`);
+    $("bow").setAttribute("transform", `translate(200 56) rotate(${swing * 0.6})`);
+    bowDot.setAttribute("fill", mood === "listening" ? (Math.sin(now / 250) > 0 ? "#22B07D" : "#FFD23F") : speaking ? "#7A5CFF" : "#FFD23F");
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+
+</body></html>
