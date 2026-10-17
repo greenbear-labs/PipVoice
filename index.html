@@ -48,7 +48,16 @@ header h1 { font-family: var(--display); font-weight: 800; font-size: 1.6rem; ma
 .pill[data-state="talking"] .dot { background: var(--talk); }
 @keyframes pulse { 50% { transform: scale(1.5); opacity: .6; } }
 
-.stage { position: relative; width: min(78vw, 360px); aspect-ratio: 1; max-width: 100%; }
+.faceRow { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; max-width: 760px; }
+.stage { position: relative; width: min(calc(100vw - 112px), 360px); aspect-ratio: 1; }
+.dressup { display: flex; flex-direction: column; gap: 12px; }
+.dress {
+  width: 60px; height: 60px; border-radius: 50%; border: 4px solid transparent; background: var(--card);
+  font-size: 2rem; line-height: 1; cursor: pointer; box-shadow: 0 4px 0 rgba(43,34,69,.12); padding: 0;
+}
+.dress:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(43,34,69,.12); }
+.dress[aria-pressed="true"] { border-color: var(--pip); background: #FFE8F2; }
+.dress:focus-visible { outline: 3px solid var(--talk); outline-offset: 2px; }
 #face { width: 100%; height: 100%; display: block; cursor: pointer; overflow: visible; }
 #face:focus-visible { outline: 4px solid var(--talk); outline-offset: 6px; border-radius: 50%; }
 .bubble {
@@ -87,8 +96,12 @@ header h1 { font-family: var(--display); font-weight: 800; font-size: 1.6rem; ma
 .chip:active, .chip.lit { transform: translateY(3px) scale(1.04); box-shadow: 0 1px 0 rgba(43,34,69,.12); background: #FFE8F2; }
 .chip:focus-visible { outline: 3px solid var(--talk); outline-offset: 2px; }
 
-details.grownups { width: 100%; max-width: 760px; background: rgba(255,255,255,.7); border-radius: 16px; padding: 10px 14px; box-sizing: border-box; }
-details.grownups summary { cursor: pointer; font-weight: 700; color: var(--ink-soft); }
+/* Kept quiet so little hands skip it: a faint small link at the very bottom until opened. */
+details.grownups { width: 100%; max-width: 760px; margin-top: auto; padding: 4px 14px; border-radius: 16px; box-sizing: border-box; }
+details.grownups[open] { background: rgba(255,255,255,.7); padding: 10px 14px; }
+details.grownups summary { cursor: pointer; list-style: none; text-align: center; font-size: .8rem; color: var(--ink-soft); opacity: .45; }
+details.grownups summary::-webkit-details-marker { display: none; }
+details.grownups[open] summary { opacity: .8; }
 .grid2 { display: grid; gap: 12px; margin-top: 10px; }
 .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .row input[type=text] { flex: 1 1 200px; min-width: 0; font: inherit; padding: 8px 12px; border-radius: 10px; border: 1px solid #C4BCD8; }
@@ -107,6 +120,7 @@ details.grownups summary { cursor: pointer; font-weight: 700; color: var(--ink-s
     <div class="pill" id="statePill" data-state="idle"><span class="dot"></span><span id="stateText">Sleeping</span></div>
   </header>
 
+  <div class="faceRow">
   <div class="stage">
     <svg id="face" viewBox="0 0 400 400" role="img" aria-label="Pip's face. Tap to say hi." tabindex="0">
       <defs>
@@ -175,6 +189,12 @@ details.grownups summary { cursor: pointer; font-weight: 700; color: var(--ink-s
     <div class="pop" id="pop" aria-hidden="true"></div>
     <div class="bubble" id="bubble" hidden aria-live="polite"></div>
   </div>
+  <div class="dressup" role="group" aria-label="Dress up Pip">
+    <button class="dress" type="button" data-outfit="" aria-label="Pink bow" aria-pressed="false">🎀</button>
+    <button class="dress" type="button" data-outfit="halloween" aria-label="Halloween witch hat" aria-pressed="false">🎃</button>
+    <button class="dress" type="button" data-outfit="christmas" aria-label="Christmas Santa hat" aria-pressed="false">🎅</button>
+  </div>
+  </div>
 
   <button id="startBtn" type="button">Wake up Pip!</button>
 
@@ -184,7 +204,7 @@ details.grownups summary { cursor: pointer; font-weight: 700; color: var(--ink-s
   </section>
 
   <details class="grownups" id="grownups">
-    <summary>For grown-ups</summary>
+    <summary>grown-ups</summary>
     <div class="grid2">
       <p class="warn" id="micNote" hidden></p>
       <div class="row">
@@ -266,6 +286,11 @@ details.grownups summary { cursor: pointer; font-weight: 700; color: var(--ink-s
   ],
   "idle": ["Do you want to talk about {topic}?", "Hey! Do you like {topic}?", "I'm thinking about {topic}! Are you?"],
   "hello": ["Hi! I'm Pip! What do you want to talk about?", "Hello friend! Let's talk! Do you like cars?"],
+  "dressup": {
+    "": ["Ta-da! My pretty pink bow!", "Back to my bow! Do you like it?"],
+    "halloween": ["Ta-da! I'm a little witch! Happy Halloween!", "Look at my witch hat! Boo! Hee hee!"],
+    "christmas": ["Ho ho ho! Look at my Santa hat! Merry Christmas!", "Ta-da! I'm Santa's helper!"]
+  },
   "poke": ["Hee hee, that tickles!", "Boop! You booped me!", "Hi again!"],
   "sleepy": ["I'm getting sleepy. Tap me to wake me up!"]
 }
@@ -277,8 +302,8 @@ details.grownups summary { cursor: pointer; font-weight: 700; color: var(--ink-s
 (() => {
   const L = JSON.parse(document.getElementById("pip-lines").textContent);
   const TOPICS = L.topics, COMBOS = L.combos, SOCIAL = L.social, GENERIC = L.generic;
-  // Halloween in October, Christmas from Dec 1 to 26. Add #halloween or #christmas to the address to try one early.
-  const SEASON = (() => {
+  // Starts as Halloween in October and Christmas from Dec 1 to 26 (or #halloween / #christmas in the address); the dress-up buttons switch it.
+  let SEASON = (() => {
     const tag = location.hash.slice(1).toLowerCase();
     if (tag === "halloween" || tag === "christmas") return tag;
     const d = new Date(), m = d.getMonth();
@@ -286,8 +311,7 @@ details.grownups summary { cursor: pointer; font-weight: 700; color: var(--ink-s
     if (m === 11 && d.getDate() <= 26) return "christmas";
     return null;
   })();
-  const seasonTopic = TOPICS.find((t) => t.season === SEASON) || null;
-  if (seasonTopic) TOPICS.unshift(...TOPICS.splice(TOPICS.indexOf(seasonTopic), 1)); // its picture goes first
+  let seasonTopic = null;
   const idleLines = (t) => L.idle.map((s) => s.replace("{topic}", t.label.toLowerCase()));
 
   // ---------- Recorded clips ----------
@@ -306,8 +330,8 @@ details.grownups summary { cursor: pointer; font-weight: 700; color: var(--ink-s
   const mouth = $("mouth"), tongue = $("tongue"), glow = $("glow"), bowDot = $("bowDot");
   const eyes = [$("eyeL"), $("eyeR")];
   const eyeOpen = eyes.map((g) => g.querySelector(".open")), eyeShut = eyes.map((g) => g.querySelector(".shut"));
-  const hat = SEASON === "halloween" ? $("hatWitch") : SEASON === "christmas" ? $("hatSanta") : null;
-  if (hat) { hat.setAttribute("display", "inline"); $("bow").setAttribute("display", "none"); }
+  const HATS = { halloween: $("hatWitch"), christmas: $("hatSanta") };
+  let hat = null;
   const logEl = $("log"), micNote = $("micNote"), voiceSel = $("voiceSel"), showHeard = $("showHeard");
   const nClips = Object.keys(CLIPS).length;
   $("voiceNote").textContent = nClips
@@ -324,6 +348,26 @@ details.grownups summary { cursor: pointer; font-weight: 700; color: var(--ink-s
     $("chips").appendChild(b);
     chipEls[t.id] = b;
   });
+
+  // ---------- Dress up ----------
+  // An outfit is a holiday mode: its hat, its picture first, and Pip brings it up more. "" is her everyday bow.
+  const dressBtns = [...document.querySelectorAll(".dress")];
+  function setOutfit(name) {
+    SEASON = name || null;
+    seasonTopic = TOPICS.find((t) => t.season === SEASON) || null;
+    hat = HATS[SEASON] || null;
+    Object.values(HATS).forEach((h) => h.setAttribute("display", h === hat ? "inline" : "none"));
+    $("bow").setAttribute("display", hat ? "none" : "inline");
+    TOPICS.forEach((t) => $("chips").appendChild(chipEls[t.id]));
+    if (seasonTopic) $("chips").prepend(chipEls[seasonTopic.id]);
+    dressBtns.forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.outfit || null) === SEASON)));
+  }
+  setOutfit(SEASON);
+  dressBtns.forEach((b) => b.addEventListener("click", () => {
+    setOutfit(b.dataset.outfit);
+    ensureAwake();
+    say(pick("dress" + b.dataset.outfit, L.dressup[b.dataset.outfit]), b.textContent);
+  }));
 
   // ---------- State ----------
   let awake = false, speaking = false, listening = false, mouthOpen = 0, mood = "idle";
