@@ -59,6 +59,9 @@ header h1 { font-family: var(--display); font-weight: 800; font-size: 1.6rem; ma
   box-shadow: 0 4px 0 rgba(43,34,69,.12);
 }
 .bubble[hidden] { display: none !important; }
+.zzz { position: absolute; top: 4%; left: 6%; font-family: var(--display); font-weight: 800; font-size: 2.2rem; color: var(--talk); pointer-events: none; animation: zzz 2.4s ease-in-out infinite; }
+.zzz[hidden] { display: none !important; }
+@keyframes zzz { 0% { opacity: 0; transform: translate(0, 10px) scale(.7); } 30% { opacity: 1; } 100% { opacity: 0; transform: translate(-16px, -36px) scale(1.15); } }
 .pop { position: absolute; top: 2%; right: 0; font-size: 3.6rem; pointer-events: none; opacity: 0; }
 .pop.go { animation: popup 1.6s ease-out; }
 @keyframes popup { 0% { opacity: 0; transform: scale(.3) rotate(-20deg); } 20% { opacity: 1; transform: scale(1.2) rotate(8deg); } 80% { opacity: 1; transform: scale(1) translateY(-14px); } 100% { opacity: 0; transform: translateY(-30px); } }
@@ -134,22 +137,41 @@ details.grownups summary { cursor: pointer; font-weight: 700; color: var(--ink-s
           <path d="M 8 0 L 40 -16 L 40 16 Z" fill="#D63C82" opacity=".5"/>
           <circle id="bowDot" r="14" fill="#FFD23F" stroke="#D63C82" stroke-width="4"/>
         </g>
+        <!-- holiday hats; only one shows, in its season -->
+        <g id="hatWitch" display="none">
+          <path d="M 128 74 Q 200 58 272 74 L 238 -46 Q 232 -58 222 -50 Z" fill="#3B2A5C"/>
+          <path d="M 140 62 Q 200 50 262 62 L 256 42 Q 200 32 146 42 Z" fill="#FF8A3D"/>
+          <ellipse cx="200" cy="76" rx="124" ry="18" fill="#2B1E45"/>
+          <path d="M 236 -40 L 246 -60 L 252 -38" fill="#FFD23F"/>
+        </g>
+        <g id="hatSanta" display="none">
+          <path d="M 108 66 Q 150 -34 256 -8 Q 306 8 318 62 L 292 66 Z" fill="#E23B3B"/>
+          <circle cx="318" cy="66" r="20" fill="#fff"/>
+          <rect x="92" y="52" width="216" height="32" rx="16" fill="#fff"/>
+        </g>
         <ellipse cx="112" cy="272" rx="28" ry="17" fill="#FF7FA8" opacity=".5"/>
         <ellipse cx="288" cy="272" rx="28" ry="17" fill="#FF7FA8" opacity=".5"/>
         <g id="eyes">
           <g id="eyeL" transform="translate(146 212)">
-            <path d="M -30 -32 L -44 -48 M -18 -40 L -26 -58 M -4 -43 L -6 -62" stroke="#2B2245" stroke-width="6" stroke-linecap="round"/>
-            <ellipse rx="32" ry="38" fill="#fff"/><ellipse rx="24" ry="28" cy="4" fill="#3A2466"/><circle cx="-8" cy="-6" r="9" fill="#fff"/><circle cx="9" cy="14" r="4" fill="#fff"/>
+            <g class="open">
+              <path d="M -30 -32 L -44 -48 M -18 -40 L -26 -58 M -4 -43 L -6 -62" stroke="#2B2245" stroke-width="6" stroke-linecap="round"/>
+              <ellipse rx="32" ry="38" fill="#fff"/><ellipse rx="24" ry="28" cy="4" fill="#3A2466"/><circle cx="-8" cy="-6" r="9" fill="#fff"/><circle cx="9" cy="14" r="4" fill="#fff"/>
+            </g>
+            <path class="shut" d="M -32 4 Q 0 30 32 4 M -26 12 L -40 22 M -14 19 L -22 32 M 0 21 L -3 35" stroke="#2B2245" stroke-width="6" stroke-linecap="round" fill="none" display="none"/>
           </g>
           <g id="eyeR" transform="translate(254 212)">
-            <path d="M 30 -32 L 44 -48 M 18 -40 L 26 -58 M 4 -43 L 6 -62" stroke="#2B2245" stroke-width="6" stroke-linecap="round"/>
-            <ellipse rx="32" ry="38" fill="#fff"/><ellipse rx="24" ry="28" cy="4" fill="#3A2466"/><circle cx="-8" cy="-6" r="9" fill="#fff"/><circle cx="9" cy="14" r="4" fill="#fff"/>
+            <g class="open">
+              <path d="M 30 -32 L 44 -48 M 18 -40 L 26 -58 M 4 -43 L 6 -62" stroke="#2B2245" stroke-width="6" stroke-linecap="round"/>
+              <ellipse rx="32" ry="38" fill="#fff"/><ellipse rx="24" ry="28" cy="4" fill="#3A2466"/><circle cx="-8" cy="-6" r="9" fill="#fff"/><circle cx="9" cy="14" r="4" fill="#fff"/>
+            </g>
+            <path class="shut" d="M -32 4 Q 0 30 32 4 M 26 12 L 40 22 M 14 19 L 22 32 M 0 21 L 3 35" stroke="#2B2245" stroke-width="6" stroke-linecap="round" fill="none" display="none"/>
           </g>
         </g>
         <path id="mouth" d="" fill="#9C2B4E" stroke="#7A1F3B" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
         <path id="tongue" d="" fill="#FF8FAB"/>
       </g>
     </svg>
+    <div class="zzz" id="zzz" aria-hidden="true">Z z z</div>
     <div class="pop" id="pop" aria-hidden="true"></div>
     <div class="bubble" id="bubble" hidden aria-live="polite"></div>
   </div>
@@ -209,13 +231,23 @@ details.grownups summary { cursor: pointer; font-weight: 700; color: var(--ink-s
     { "id": "music", "label": "Songs", "icon": "🎵", "words": ["sing", "song", "music", "dance", "twinkle", "abc"],
       "say": ["Twinkle twinkle little star, how I wonder what you are!", "Let's dance! Wiggle wiggle wiggle! Now freeze!", "La la la! Your turn to sing!"] },
     { "id": "icecream", "label": "Ice cream", "icon": "🍦", "words": ["ice cream", "icecream", "popsicle"],
-      "say": ["Ice cream! Brrr, it's cold! What flavor do you like?", "Strawberry, chocolate, or vanilla? I like all of them!"] }
+      "say": ["Ice cream! Brrr, it's cold! What flavor do you like?", "Strawberry, chocolate, or vanilla? I like all of them!"] },
+    { "id": "halloween", "label": "Halloween", "icon": "🎃", "season": "halloween",
+      "words": ["halloween", "pumpkin", "costume", "trick", "spooky", "ghost", "witch", "=boo", "bat", "skeleton", "jack o", "dress up"],
+      "say": ["Happy Halloween! Boo! Did I scare you? Hee hee!", "What are you going to be for Halloween? I'm going to be a witch!", "Pumpkins are big and orange! Can you make a silly pumpkin face?", "Ghosts say boo! Can you say boo like a ghost?", "Witches fly on broomsticks! Zoom! Hold on tight!"],
+      "hello": ["Happy Halloween! I'm Pip the little witch! What are you going to be?", "Boo! Hee hee! It's almost Halloween! Do you like pumpkins?"] },
+    { "id": "christmas", "label": "Christmas", "icon": "🎄", "season": "christmas",
+      "words": ["christmas", "santa", "reindeer", "rudolph", "present", "gift", "elf", "elves", "snowman", "snow", "sleigh", "jingle", "ornament", "ho ho"],
+      "say": ["Ho ho ho! Merry Christmas! Can you say ho ho ho?", "What do you want Santa to bring you?", "Reindeer can fly! Rudolph has a shiny red nose!", "Jingle bells, jingle bells, jingle all the way!", "Let's build a snowman! Roll, roll, roll the snow!"],
+      "hello": ["Ho ho ho! Merry Christmas! I'm Pip! Do you like presents?", "Hi friend! Santa is coming soon! What do you want for Christmas?"] }
   ],
   "combos": [
     { "parts": ["race", "car"], "topic": "race", "icon": "🏎️", "say": ["A race car! The fastest car of all! Vroooom!", "Race cars go zoom around the track! Ready, set, go!"] },
     { "parts": ["fire", "truck"], "topic": "trucks", "icon": "🚒", "say": ["Wee-ooo wee-ooo! Here comes the fire truck to save the day!", "Fire trucks are big and red with a long ladder!"] },
     { "parts": ["robot", "dino"], "topic": "robots", "icon": "🦾", "say": ["A robot dinosaur! Beep boop rawr! That's so silly!"] },
     { "parts": ["monster", "truck"], "topic": "trucks", "icon": "🛻", "say": ["Monster trucks have giant wheels! They go bump, bump, crash!"] },
+    { "parts": ["trick", "treat"], "topic": "halloween", "icon": "🍬", "say": ["Trick or treat! Smell my feet! Give me something good to eat!", "Trick or treat! Yum, candy! What candy do you want?"] },
+    { "parts": ["christmas", "tree"], "topic": "christmas", "icon": "⭐", "say": ["A Christmas tree! With twinkly lights and a big star on top!"] },
     { "parts": ["rocket", "moon"], "topic": "space", "icon": "🌙", "say": ["Let's fly our rocket to the moon! Three, two, one, blast off!"] }
   ],
   "social": [
@@ -245,6 +277,17 @@ details.grownups summary { cursor: pointer; font-weight: 700; color: var(--ink-s
 (() => {
   const L = JSON.parse(document.getElementById("pip-lines").textContent);
   const TOPICS = L.topics, COMBOS = L.combos, SOCIAL = L.social, GENERIC = L.generic;
+  // Halloween in October, Christmas from Dec 1 to 26. Add #halloween or #christmas to the address to try one early.
+  const SEASON = (() => {
+    const tag = location.hash.slice(1).toLowerCase();
+    if (tag === "halloween" || tag === "christmas") return tag;
+    const d = new Date(), m = d.getMonth();
+    if (m === 9) return "halloween";
+    if (m === 11 && d.getDate() <= 26) return "christmas";
+    return null;
+  })();
+  const seasonTopic = TOPICS.find((t) => t.season === SEASON) || null;
+  if (seasonTopic) TOPICS.unshift(...TOPICS.splice(TOPICS.indexOf(seasonTopic), 1)); // its picture goes first
   const idleLines = (t) => L.idle.map((s) => s.replace("{topic}", t.label.toLowerCase()));
 
   // ---------- Recorded clips ----------
@@ -258,14 +301,18 @@ details.grownups summary { cursor: pointer; font-weight: 700; color: var(--ink-s
 
   // ---------- Elements ----------
   const $ = (id) => document.getElementById(id);
+  const zzz = $("zzz");
   const bubble = $("bubble"), pop = $("pop"), pill = $("statePill"), stateText = $("stateText");
   const mouth = $("mouth"), tongue = $("tongue"), glow = $("glow"), bowDot = $("bowDot");
   const eyes = [$("eyeL"), $("eyeR")];
+  const eyeOpen = eyes.map((g) => g.querySelector(".open")), eyeShut = eyes.map((g) => g.querySelector(".shut"));
+  const hat = SEASON === "halloween" ? $("hatWitch") : SEASON === "christmas" ? $("hatSanta") : null;
+  if (hat) { hat.setAttribute("display", "inline"); $("bow").setAttribute("display", "none"); }
   const logEl = $("log"), micNote = $("micNote"), voiceSel = $("voiceSel"), showHeard = $("showHeard");
   const nClips = Object.keys(CLIPS).length;
   $("voiceNote").textContent = nClips
     ? `Pip is using ${nClips} recorded clips (${window.PIP_AUDIO.voice}). The backup voice only covers lines without a clip.`
-    : "No recorded clips found, so Pip uses this device's own voice. Run make_pip_voice.py on the Mac mini to record her real voice.";
+    : "Pip uses this device's own voice.";
 
   // ---------- Chips ----------
   const chipEls = {};
@@ -363,7 +410,8 @@ details.grownups summary { cursor: pointer; font-weight: 700; color: var(--ink-s
 
   // ---------- Matching ----------
   function norm(s) { return " " + s.toLowerCase().replace(/[^a-z\s']/g, " ").replace(/\s+/g, " ").trim() + " "; }
-  const has = (text, w) => text.includes(" " + w); // word-start match: "car" hits "cars", not "scar"
+  // Word-start match: "car" hits "cars", not "scar". A leading "=" means the whole word only ("=boo" skips "book").
+  const has = (text, w) => w[0] === "=" ? text.includes(" " + w.slice(1) + " ") : text.includes(" " + w);
 
   function matchAll(alternatives) {
     // Look through every guess the recognizer offered; toddler speech often lands on the 2nd or 3rd.
@@ -446,7 +494,8 @@ details.grownups summary { cursor: pointer; font-weight: 700; color: var(--ink-s
     if (Date.now() - lastHeardAt < 20000) return;
     if (idleStreak >= 3) { awake = false; stopListening(); say(L.sleepy[0]); $("startBtn").hidden = false; return; }
     idleStreak++;
-    const t = TOPICS[Math.floor(Math.random() * TOPICS.length)];
+    // In a holiday season, half of the suggestions are about the holiday.
+    const t = seasonTopic && Math.random() < 0.5 ? seasonTopic : TOPICS[Math.floor(Math.random() * TOPICS.length)];
     flash(t.id);
     say(pick("idle", idleLines(t)), t.icon);
   }, 2000);
@@ -459,7 +508,7 @@ details.grownups summary { cursor: pointer; font-weight: 700; color: var(--ink-s
     if (!SR) showMicNote("This browser can't do speech recognition (Firefox can't). Chrome, Edge or Safari work. You can still tap the pictures or type below.");
     navigator.wakeLock?.request("screen").catch(() => {});
   }
-  $("startBtn").addEventListener("click", () => { ensureAwake(); say(pick("hello", L.hello)); });
+  $("startBtn").addEventListener("click", () => { ensureAwake(); say(pick("hello", seasonTopic ? seasonTopic.hello : L.hello)); });
   const poke = () => {
     if (!awake) { $("startBtn").click(); return; }
     say(pick("poke", L.poke));
@@ -489,9 +538,12 @@ details.grownups summary { cursor: pointer; font-weight: 700; color: var(--ink-s
     mouthOpen += (target - mouthOpen) * 0.45;
     drawMouth(mouthOpen);
     if (now > nextBlink) { blinkUntil = now + 140; nextBlink = now + 2000 + Math.random() * 3500; }
-    const sy = now < blinkUntil ? 0.08 : mood === "idle" ? 0.3 : 1;
+    const shut = mood === "idle" || now < blinkUntil;
+    eyeOpen.forEach((g) => g.setAttribute("display", shut ? "none" : "inline"));
+    eyeShut.forEach((g) => g.setAttribute("display", shut ? "inline" : "none"));
+    zzz.hidden = mood !== "idle";
     const look = mood === "listening" ? Math.sin(now / 900) * 6 : 0;
-    eyes.forEach((g, i) => g.setAttribute("transform", `translate(${(i ? 254 : 146) + look} 212) scale(1 ${sy})`));
+    eyes.forEach((g, i) => g.setAttribute("transform", `translate(${(i ? 254 : 146) + look} 212)`));
     const bob = speaking ? Math.sin(now / 120) * 5 : Math.sin(now / 700) * 3;
     $("whole").setAttribute("transform", `translate(0 ${bob})`);
     // Pigtails bounce while she talks; the bow tilts a little.
@@ -499,6 +551,7 @@ details.grownups summary { cursor: pointer; font-weight: 700; color: var(--ink-s
     $("puffL").setAttribute("transform", `rotate(${swing} 110 180)`);
     $("puffR").setAttribute("transform", `rotate(${-swing} 290 180)`);
     $("bow").setAttribute("transform", `translate(200 56) rotate(${swing * 0.6})`);
+    if (hat) hat.setAttribute("transform", `rotate(${swing * 0.5} 200 80)`);
     bowDot.setAttribute("fill", mood === "listening" ? (Math.sin(now / 250) > 0 ? "#22B07D" : "#FFD23F") : speaking ? "#7A5CFF" : "#FFD23F");
     requestAnimationFrame(frame);
   }
